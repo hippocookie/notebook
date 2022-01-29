@@ -627,3 +627,35 @@ restartPolicy
 只要 Pod 的 restartPolicy 指定的策略允许重启异常的容器（比如：Always），那么这个 Pod 就会保持 Running 状态，并进行容器重启。否则，Pod 就会进入 Failed 状态 。
 
 对于包含多个容器的 Pod，只有它里面所有的容器都进入异常状态后，Pod 才会进入 Failed 状态。在此之前，Pod 都是 Running 状态。此时，Pod 的 READY 字段会显示正常容器的个数。
+
+## 控制器模型
+
+### kube-controller-manager
+
+这个组件，就是一系列控制器的集合。
+
+```bash
+$ cd kubernetes/pkg/controller/
+$ ls -d */              
+deployment/             job/                    podautoscaler/          
+cloud/                  disruption/             namespace/              
+replicaset/             serviceaccount/         volume/
+cronjob/                garbagecollector/       nodelifecycle/          replication/            statefulset/            daemon/
+...
+```
+
+这些控制器之所以被统一放在 pkg/controller 目录下，就是因为它们都遵循 Kubernetes 项目中的一个通用编排模式，即：控制循环（control loop）。
+
+```java
+for {
+  实际状态 := 获取集群中对象X的实际状态（Actual State）
+  期望状态 := 获取集群中对象X的期望状态（Desired State）
+  if 实际状态 == 期望状态{
+    什么都不做
+  } else {
+    执行编排动作，将实际状态调整为期望状态
+  }
+}
+```
+
+实际状态往往来自于 Kubernetes 集群本身。而期望状态，一般来自于用户提交的 YAML 文件。
