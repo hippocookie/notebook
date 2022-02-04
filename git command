@@ -1,0 +1,48 @@
+git add <filename>
+-- Add changes to stage
+
+git status
+-- check status of current repo
+
+git status -s
+-- display short version of repo status
+
+.gitignore
+-- a file in git repo to list ignore file syntax (not track those files)
+
+git diff <filename>
+-- showing changes have not been staged
+
+git diff --staged / --cached
+-- showing changes between staged and last commit
+
+git difftool <filename>
+-- using visualized tool to compare diff
+
+git commit -m / -a / -v
+-- commit changes
+	-m: Add message
+	-a: Add all changes to stage then commit
+	-v: display diff as a help when write commit message
+
+git rm -f / --cached
+-- delete file in local and git
+	-f: force delete
+	--cached: keep local, remove git tracking
+
+git mv <filename> <newfilename>
+-- rename a file
+
+git log -p / -2 / --stat / --pretty=online / --graph
+-- display log information
+	-p: show diff of commit
+	-2: display most recent 2 records
+	--status: display commit status
+	--pretty=online: format log out put to one line
+	--graph: display a graph of commit history
+
+git reset HEAD <filename>
+-- remove file from stage status (won't be commit)
+
+git checkout -- <filename>
+-- discard changes in working directory

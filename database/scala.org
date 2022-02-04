@@ -1,0 +1,98 @@
+*** List
+**** :: 
+-- prepends 一个元素到list
+-- 是右边元素的方法，如果方法名以冒号结束，就是右边元素方法
+**** Nil
+-- 声明empty list, e.g. 1 :: 2 :: Nil
+**** ::: 
+-- list concatination
+**** 没有append操作，append复杂度为线性，prepend为常数
+
+*** Tuple
+-- 可存放不同类型元素，第一个元素从1开始，不是0
+**** 获取元素
+-- tuple._1
+
+*** Set
+**** +
+Mutable: append the element
+Immutable: create a new set with element
+
+*** Class
+**** getter setter
+class Person() {
+  private var _age = 0
+
+  def age = _age
+  def age_ = (value:Int):Unit = _age = value
+}
+
+_ : allow a space in the method name
+"age_ =" 等于 "age ="
+
+**** 函数返回值
+-- 任何类型都可以转化为Unit
+-- 默认最后一行为返回值
+-- 过程形式(procedure)，没有等号只有{}，返回值为Unit
+
+*** Object
+-- singleton objects
+-- object和class有相同名字，叫做伴生对象和伴生类
+-- 没有参数，不能用new创建
+-- 就像Java中类的静态方法合集
+
+*** 类型和操作符
+Byte, Short, Int, Long, Char, String, Float, Double, Boolean
+
+**** “”“ raw string
+-- ”“”| line1
+      | line2""".stripMargin
+
+**** Symbol literal
+-- 'ident
+-- mapped to instances of the predefined class scala.Symbol
+
+*** Functional Objects
+-- class Person(name : String, age :Int) 会构造相同参数的主构造函数，
+任何不属于方法和属性的类中代码会放入主构造函数。
+**** require(boolean)
+-- 检查先验条件是否成立
+**** 辅助构造函数
+-- def this(arg : type) = this(arg : type)
+
+**** for loop
+-- filtering
+for (
+  file <filesHere
+  if file.isFile;
+  if file.getName.endsWith(".scala")
+) println(file)
+
+-- nested loop
+for (
+  file <filesHere
+  if file.getName.endsWith(".scala");
+  line <fileLines(file)
+  if line.trim.matches(pattern)
+) println(file +": "+ line.trim)
+
+**** for caluses yield body
+-- form a new collection
+
+**** Exception
+try {
+  val f = new FileReader("input.txt")
+  // Use and close file
+} catch {
+  case ex: FileNotFoundException => // Handle missing file
+  case ex: IOException => // Handle other I/O error
+}
+
+**** Match expression
+firstArg match {
+  case "salt" => println("pepper")
+  case "chips" => println("salsa")
+  case "eggs" => println("bacon")
+  case _ => println("huh?")
+}
+

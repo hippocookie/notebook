@@ -1,0 +1,154 @@
+** Transaction
+*** ACID
+**** Atomicity 原子性
+-- 整个交易必须全部实现或者回滚到原来状态
+**** Consistency 一致性
+-- 数据交易前后状态需保持一致
+**** Isolation 隔离性
+-- 交易中途结果对其他交易不可见
+**** Durability 持久性
+-- 交易成功结果持久保存
+
+*** 隔离等级
+**** READ UNCOMMITTED
+-- 交易可以看到没有committed的交易
+**** READ COMMITTED (多数DB默认)
+-- 交易只能看到其他交易已经committed的结果
+-- 允许nonrepeatable read: 同样query运行两次结果不一样
+**** REPEATABLE READ (MySQL默认)
+-- 交易中两次查询结果一致
+-- phantom reads: range查询中其他交易修改了表，两次查询不一致，
+InnoDB，Falcon使用multiversion concurrency control 解决这个问题
+**** SERIALIZABLE
+-- 最高级，通过强制交易按顺序执行解决phantom read
+-- 对读取每行进行加锁
+
+**** Write ahead log
+-- 编写交易日志而不是直接修改数据
+-- 日志可以在硬盘中连续写入，比随机写入更快
+-- 之后再根据日志修改数据
+**** MySQL Transaction
+***** AUTOCOMMIT
+-- SHOW VARIABLE LIKE 'AUTOCOMMIT';
+-- SET AUTOCOMMIT = 1;
+-- 自动将每次query放入transaction执行
+-- 使用COMMIT / ROLLBACK 开始新的transaction
+-- DDL也能使之前query COMMIT
+-- SET SESSION TRANSACTION LEVEL READ COMMITTED;
+
+***** 混合支持transaction引擎与不支持transaction引擎
+-- 如果顺利执行，则没有问题
+-- 如果ROLLBACK，nontransactional table将无法执行，导致状态不一致
+***** 显示/隐式 锁
+-- InnoDB uses a two-phase locking protocol
+-- 交易任何时候都可以获得锁，但是只有COMMIT或ROLLBACK才释放
+-- InnoDB 支持显示锁：
+      SELECT ... LOCK IN SHARE MODE
+      SELECT ... FOR UPDATE
+-- MySQL在server中实现LOCK TABLES 和 UNLOCK TABLES，不是引擎中，不能替代transaction
+
+**** Multiversion Concurrency Control (MVCC)
+-- InnoDB Falcon, PBXT 使用row-level locking 和 MVCC
+-- MMVC 保留一个状态快照，只在REPEATABLE READ 和 READ COMMITTED 等级工作
+-- InnoDB 对row标记创建时间和过期时间，不是真时间，而是系统版本号
+***** SELECT
+-- 找到row的版本号小于等于交易版本号
+-- 删除row版本号必须是undefined或者大于交易版本号
+***** INSERT
+-- row设为当前的系统版本号
+***** DELETE
+-- row deletion ID 设为当前系统坂本号
+***** UPDATE
+-- 复制一个row并写入当前版本号，并将旧的row deletion ID 设为当前版本号
+
+***** 好处是这样使得读操作不需要加锁
+***** 坏处是要存更多数据，更多检验操作
+
+*** MySQL引擎
+-- 查看状态: SHOW TABLE STATUS LIKE '**'
+**** MyISAM (默认)
+--有 full-text indexing， compression，spatial functions
+-- 没有 transactions，row-level locks
+-- 每个table有两个文件，data file(.MYD) 和 index file(.MYI)
+-- 没有平台限制
+-- dynamic / static rows
+-- MAX_ROWS 和 AVG_ROW_LENGTH 修改指针大小
+
+***** Locking and concurrency
+-- 整个表加锁，读获取shared locks，写获取exclusive locks，读取时可以同步写入
+***** Automatic repair
+***** Manual repair
+-- CHECK TABLE / REPAIR TABLE
+-- myisamchk 工具来修复
+***** Index
+-- 索引BLOB/TEXT前500个字符
+***** Delayed key writes
+-- DELAY_KEY_WRITE 
+***** Cmopressed MyISAM tables
+-- myisampack工具
+-- 不能修改，如要修改必须能先解压缩
+-- 减少硬盘I/O
+***** MyISAM Merge Engine
+-- 把几个表结合成一个virtual table，logging，data warehousing
+
+**** InnoDB
+-- 处理较短耗时交易，通常是成功commit，不是rollback
+-- performace，automatic crash recovery
+-- 数据存放在一个或多个文件，统称tablespace
+-- 为避免phantom reads，对一个范围加锁
+-- 表建立在clustered index上
+-- 索引结构与其他不同，支持primary key快速查询
+
+**** Memory Engine
+-- 快速获取，数据不变或重启不需要存储
+-- lookup, mapping, cache, intermediate result
+-- 支持HASH index
+-- table-level锁
+-- 不支持TEXT，BLOB类型
+-- 只有定长row
+-- 如果itermediate result太大，或有TEXT，BLOB类型，将转化为MyISAM存储
+
+-- Temporary table 可以被任何引擎使用，只对一个连接可见，连接关闭后消失，和Memory Engine不是一回事
+-- CREATE TEMPORARY TABLE
+
+**** Archive Engine
+-- 只有INSERT，SELECT语句，不支持索引
+-- 比MyISAM少用disk I/O，插入的每行数据被压缩为zlib
+-- 用来logging和数据查询，或需要在master节点快速插入
+-- slave节点可用不同引擎
+-- 支持row-level锁，buffer for high-concurrency insert
+**** CSV Engine
+-- 把CSV文件当做table，不支持index
+**** Federated Engine
+-- 不在本地存储，refer remote MySQL server
+**** Blackhole Engine
+-- 没有存储机制，丢弃所有INSERT
+**** NDB Cluster Engine
+-- log到硬盘中，但数据都存放在内存中，优化primary key查找
+-- 由data node，management node 和 SQL node 组成
+-- data node有多个副本
+-- 执行join在MySQL server level，因为数据必须通过网络传输获取，复杂的join会非常耗时
+**** Falcon Engine
+-- MVCC，并尝试将交易运行在内存中
+**** solidBD Engine
+-- 交易引擎，MVCC，支持悲观、乐观并发
+**** PBXT (Primebase XT) Engine
+-- 交易引擎，使用transaction logs和data files来避免write-ahead logging
+**** Maria Storage Engine
+-- 替代MyISAM
+
+**** ALTER TABLE
+***** mysql > ALTER TABLE mytable ENGINE = Falcon
+-- 很慢，MySQL会锁住原来的table，逐行去复制
+***** Dump and import
+-- mysqldump生成dump，修改CREATE TABLE语句名称和类型，删除DROP TABLE
+***** CREATE and SELECT
+> CREATE TABLE myinno LIKE myisam;
+> ALTER TABLE myinno ENGINE=InnoDB;
+> INSERT INTO myinno SELECT * FROM myisam;
+
+> START TRANSACTION;
+> INSERT INTO myinno SELECT * FROM myisam
+  WHERE id BETWEEN x AND y;
+> COMMIT;
+

@@ -1,0 +1,381 @@
+To determine what storage engine a particular table uses, use the SHOW TABLE STATUS
+
+mysql> SHOW TABLE STATUS LIKE 'user' \G
+*************************** 1. row ***************************
+Name: user
+Engine: MyISAM
+Row_format: Dynamic
+Rows: 6
+Avg_row_length: 59
+Data_length: 356
+Max_data_length: 4294967295
+Index_length: 2048
+Data_free: 0
+Auto_increment: NULL
+Create_time: 2002-01-24 18:07:17
+Update_time: 2002-01-24 21:56:29
+Check_time: NULL
+Collation: utf8_bin
+Checksum: NULL
+Create_options:
+Comment: Users and global privileges
+1 row in set (0.00 sec)
+
+
+mysql> SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;
+
+mysql> SHOW VARIABLES LIKE 'AUTOCOMMIT';
++---------------+-------+
+| Variable_name | Value |
++---------------+-------+
+| autocommit | ON |
++---------------+-------+
+1 row in set (0.00 sec)
+mysql> SET AUTOCOMMIT = 1;
+
+
+The MyISAM Engine
+As MySQL’s default storage engine, MyISAM provides a good compromise between
+performance and useful features, such as full-text indexing, compression, and spatial
+(GIS) functions. MyISAM doesn’t support transactions or row-level locks.
+
+Storage
+MyISAM typically stores each table in two files: a data file and an index file. The two
+files bear .MYD and .MYI extensions, respectively.
+
+The number of rows a MyISAM table can hold is limited primarily by the available disk space on your database
+server and the largest file your operating system will let you create.
+
+MyISAM tables can contain either dynamic or static (fixed-length) rows.
+
+MyISAM tables created in MySQL 5.0 with variable-length rows are configured by
+default to handle 256 TB of data, using 6-byte pointers to the data records.
+
+All MySQL versions
+can handle a pointer size of up to 8 bytes. To change the pointer size on a
+MyISAM table (either up or down), you must specify values for the MAX_ROWS and
+AVG_ROW_LENGTH options that represent ballpark figures for the amount of space you
+need:
+CREATE TABLE mytable (
+	a INTEGER NOT NULL PRIMARY KEY,
+	b CHAR(18) NOT NULL
+) MAX_ROWS = 1000000000 AVG_ROW_LENGTH = 32;
+
+You can change the pointer size later with the ALTER TABLE statement, 
+but that will cause the entire table and all of its indexes to be rewritten, 
+which may take a long time.
+
+Locking and concurrency
+MyISAM locks entire tables, not rows. Readers obtain shared (read) locks on all
+tables they need to read. Writers obtain exclusive (write) locks. However, you
+can insert new rows into the table while select queries are running against it
+(concurrent inserts). This is a very important and useful feature.
+
+Automatic repair
+
+Manual repair
+You can use the CHECK TABLE mytable and REPAIR TABLE mytable commands to
+check a table for errors and repair them.
+
+Index features
+You can create indexes on the first 500 characters of BLOB and TEXT columns in
+MyISAM tables. MyISAM supports full-text indexes, which index individual
+words for complex search operations.
+
+Delayed key writes
+MyISAM tables marked with the DELAY_KEY_WRITE create option don’t write
+changed index data to disk at the end of a query. Instead, MyISAM buffers the
+changes in the in-memory key buffer. It flushes index blocks to disk when it
+prunes the buffer or closes the table.
+
+You can’t modify
+compressed tables (although you can uncompress, modify, and recompress tables if
+you need to), but they generally use less space on disk. As a result, they offer faster
+performance, because their smaller size requires fewer disk seeks to find records.
+Compressed MyISAM tables can have indexes, but they’re read-only
+
+The rows are MySQL’s Storage Engines compressed individually, so MySQL doesn’t 
+need to unpack an entire table (or even a page) just to fetch a single row.
+
+The Merge engine is a variation of MyISAM. A Merge table is the combination of
+several identical MyISAM tables into one virtual table. This is particularly useful
+when you use MySQL in logging and data warehousing applications.
+
+------------------------------------
+
+The InnoDB Engine
+InnoDB was designed for transaction processing—specifically, processing of many
+short-lived transactions that usually complete rather than being rolled back.
+Its performance
+and automatic crash recovery make it popular for nontransactional storage needs,
+too.
+
+
+InnoDB stores its data in a series of one or more data files that are collectively known
+as a tablespace. A tablespace is essentially a black box that InnoDB manages all by
+itself.
+
+InnoDB uses MVCC to achieve high concurrency, and it implements all four SQL
+standard isolation levels. It defaults to the REPEATABLE READ isolation level, and it has a
+next-key locking strategy that prevents phantom reads in this isolation level: rather
+than locking only the rows you’ve touched in a query, InnoDB locks gaps in the
+index structure as well, preventing phantoms from being inserted.
+
+InnoDB tables are built on a clustered index,it provides very fast primary key lookups. However,
+secondary indexes (indexes that aren’t the primary key) contain the primary key
+columns, so if your primary key is large, other indexes will also be large. You should
+strive for a small primary key if you’ll have many indexes on a table. InnoDB doesn’t
+compress its indexes.InnoDB’s next most popular feature is foreign key constraints.
+
+
+---------------------------------------
+
+The Memory Engine
+Memory tables (formerly called HEAP tables) are useful when you need fast access to
+data that either never changes or doesn’t need to persist after a restart.Memory
+tables are generally about an order of magnitude faster than MyISAM tables. All of
+their data is stored in memory, so queries don’t have to wait for disk I/O. The table
+structure of a Memory table persists across a server restart, but no data survives.
+
+Although Memory tables are very fast, they often don’t work well as a generalpurpose
+replacement for disk-based tables. They use table-level locking, which gives
+low write concurrency, and they do not support TEXT or BLOB column types. They
+also support only fixed-size rows, so they really store VARCHARs as CHARs, which can
+waste memory.
+MySQL uses the Memory engine internally while processing queries that require a
+temporary table to hold intermediate results. If the intermediate result becomes too
+large for a Memory table, or has TEXT or BLOB columns, MySQL will convert it to a
+MyISAM table on disk.
+
+-----------------------------------------
+
+The Archive Engine
+The Archive engine supports only INSERT and SELECT queries, and it does not support
+indexes. It causes much less disk I/O than MyISAM, because it buffers data
+writes and compresses each row with zlib as it’s inserted. Also, each SELECT query
+requires a full table scan. Archive tables are thus ideal for logging and data acquisition,
+where analysis tends to scan an entire table, or where you want fast INSERT queries
+on a replication master. Replication slaves can use a different storage engine for
+the same table, which means the table on the slave can have indexes for faster performance
+on analysis.
+
+Archive supports row-level locking and a special buffer system for high-concurrency
+inserts. It gives consistent reads by stopping a SELECT after it has retrieved the number
+of rows that existed in the table when the query began. It also makes bulk inserts
+invisible until they’re complete. These features emulate some aspects of transactional
+and MVCC behaviors, but Archive is not a transactional storage engine. It is
+simply a storage engine that’s optimized for high-speed inserting and compressed
+storage.
+
+-------------------------------------------
+
+The CSV Engine
+The CSV engine can treat comma-separated values (CSV) files as tables, but it does
+not support indexes on them.
+
+-------------------------------------------
+
+The Federated Engine
+The Federated engine does not store data locally. Each Federated table refers to a
+table on a remote MySQL server, so it actually connects to a remote server for all
+operations.
+
+we think it is most useful for singlerow
+lookups by primary key, or for INSERT queries you want to affect a remote server.
+It does not perform well for aggregate queries, joins, or other basic operations.
+
+-------------------------------------------
+
+The Blackhole Engine
+The Blackhole engine has no storage mechanism at all. It discards every INSERT
+instead of storing it. However, the server writes queries against Blackhole tables to its
+logs as usual, so they can be replicated to slaves or simply kept in the log. That
+makes the Blackhole engine useful for fancy replication setups and audit logging.
+
+-------------------------------------------
+
+The NDB Cluster Engine
+It was originally designed for high speed (real-time performance requirements), with redundancy
+and load-balancing capabilities. Although it logged to disk, it kept all its data
+in memory and was optimized for primary key lookups.
+
+There is no storage area network or other big centralized storage solution, which some
+other types of clusters rely on. An NDB database consists of data nodes, management
+nodes, and SQL nodes (MySQL instances). Each data node holds a segment
+(“fragment”) of the cluster’s data. it is simply not designed
+as a general-purpose storage engine.
+
+One common shock is that NDB currently performs joins at the MySQL server level,
+not in the storage engine layer. Because all data for NDB must be retrieved over the
+network, complex joins are extremely slow. On the other hand, single-table lookups
+can be very fast, because multiple data nodes each provide part of the result. This is
+just one of many aspects you’ll have to consider and understand thoroughly when
+looking at NDB Cluster for a particular application.
+
+--------------------------------------------
+
+The Falcon Engine
+Falcon uses MVCC and tries to keep running transactions entirely in
+memory. This makes rollbacks and recovery operations extremely fast.
+
+--------------------------------------------
+
+The solidDB Engine
+a transactional engine that uses MVCC. It supports both pessimistic
+and optimistic concurrency control, which no other engine currently does. solidDB
+for MySQL includes full foreign key support.
+
+--------------------------------------------
+
+The PBXT (Primebase XT) Engine
+is a transactional storage engine
+with a unique design. One of its distinguishing characteristics is how it uses its transaction
+logs and data files to avoid write-ahead logging, which reduces much of the overhead of transaction commits. This architecture gives PBXT the potential to deal
+with very high write concurrency, and tests have already shown that it can be faster
+than InnoDB for certain operations. PBXT uses MVCC and supports foreign key
+constraints, but it does not use clustered indexes.
+
+--------------------------------------------
+
+The Maria Storage Engine
+The goal is to use Maria as a replacement for MyISAM, which is currently MySQL’s
+default storage engine, and which the server uses internally for tasks such as privilege
+tables and temporary tables created while executing queries. Here are some
+highlights from the roadmap:
+• The option of either transactional or nontransactional storage, on a per-table
+basis
+• Crash recovery, even when a table is running in nontransactional mode
+• Row-level locking and MVCC
+• Better BLOB handling
+
+-------------------------------------------
+
+Consideration when select DB engine
+
+Transactions
+	Yes: InnoDB
+	No: MyISAM
+
+Concurrency
+	MyISAM
+
+Backup
+	Online / off-line
+
+Crash recovery
+	MyISAM easy crash and longer recovery than InnoDB
+
+Special features
+	clustered index optimization: InnoDB, solidDB
+	full-text search: MyISAM
+
+---------------------------------------------------
+
+Convert table engine
+
+1. Alter table
+mysql> ALTER TABLE mytable ENGINE = Falcon
+	-- work for all
+	-- slow, row to row copy from old table to new table
+	-- use all I/O capacity
+	-- origin table read lock
+
+
+2. Dump and import
+	-- change table name, type, and delete DROP TABLE command
+
+3. Create and Insert
+If not a lot data:
+mysql> CREATE TABLE innodb_table LIKE myisam_table;
+mysql> ALTER TABLE innodb_table ENGINE=InnoDB;
+mysql> INSERT INTO innodb_table SELECT * FROM myisam_table;
+
+Otherwise:
+mysql> START TRANSACTION;
+mysql> INSERT INTO innodb_table SELECT * FROM myisam_table
+-> WHERE id BETWEEN x AND y;
+mysql> COMMIT;
+
+--------------------------------------------------
+
+Chapter 2
+Finding Bottlenecks: Benchmarking and Profiling
+
+Benchmarking and profiling
+
+Benchmarking
+This can help determine a system’s capacity, show you which changes matter
+and which don’t, or show how your application performs with different data.
+
+profiling
+profiling helps you find where your application spends the most time or
+consumes the most resources.
+
+
+Benchmarking principles:
+
+• Measure how your application currently performs.
+
+• Validate your system’s scalability.
+
+• Plan for growth.
+
+• Test your application’s ability to tolerate a changing environment.
+
+• Test different hardware, software, and operating system configurations.
+
+Strategies:
+	full stack
+	single component
+
+Measurement:
+
+Transactions per time unit
+
+Response time or latency
+	min, max, avg, percentile response time
+
+Scalability
+	throughput / response time under a changing workload
+
+Concurrency
+	whether performance drop when the concurrency increase
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

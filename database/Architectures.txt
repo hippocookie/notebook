@@ -1,0 +1,168 @@
+Client-server architectures
+- user interface, processing components, data level
+
+
+Vertical distribution
+- placing logically different components on different machines. e.g. split column-wise of relational databases distributed across multiple machines.
+
+Horizontal distribution (peer-to-peer systems)
+- a client or server may be physically split up into logically equivalent parts, but each part is operating on its own share of the complete data set, thus balancing the load.
+
+
+Structured Peer-to-Peer Architectures
+- the overlay network is constructed using a deterministic procedure.
+- most used procedure is to organize the processes through a distributed hash table (DHT).
+- data item area assgined a random key from a large identifier space.
+- nodes in the system are also assgined a random number from the same identifier space.
+
+
+Content Addressable Network (CAN)
+- deploys a d-dimensional Cartesian coordinate space, which is completely partitioned among all the nodes that participate in the system.
+- each node has an associated region.
+- every data item in CAN will be assigned a unique point in this space, after which it is also clear which node is responsible for that data.
+- leaving might cause less symmetric partitioning of the coordinate space, for which reason a background process is periodically started to repartition the entire space.
+
+
+Unstructured Peer-to-Peer Architectures
+- largely rely on randomized algorithms for constructing an overlay network.
+- each node maintains a list of neighbors, but that this list is constructed in a more or less random way.
+- data items are assumed to be randomly placed on nodes, when a node needs to locate a specific data item, the only thing it can effectively do is flood the network with a search query.
+- one of goadls is to construct an overlay network that resembles a random graph.
+
+Construction
+- active thread takes the initiative to communicate with another node.
+
+Actions by active thread (periodically repeated)
+
+select a peer P from the current partial view
+if PUSH_MODE {
+   mybuffer = [(MyAddress, 0)];
+   permute partial view;
+   moe H oldest entries to the end;
+   append first c/2 entries to mybuffer;
+   send mybuffer to P;
+} else {
+  send trigger to P;
+}
+if PULL_MODE {
+   recevie P's buffer
+}
+construct a new partial view from the current one and P's buffer;
+increment the age of every entry in the new partical view;
+
+
+Actions by passive thread:
+
+receive buffer from any process Q;
+if PULL_MODE {
+   mybuffer = [(MyAddress, 0)];
+   permute partial view;
+   move H oldest entries to the end;
+   append first c/2 entries to mybuffer;
+   send mybuffer to P
+}
+construct a new partial view from the current one and P's buffer;
+increment the age of every entry in the new partial view;
+
+
+- protocols that use only push mode or only pull mode can fairly easily lead to disconnected overlays, groudps of nodes will become isolated and will never be able to reach every other node in the network. It makes more sense to let nodes actually exchange entries.
+
+- leaving the network turns out to be a very simple operation provided the nodes exchange partial views on the regular basis. IN this case, a node can simply depart without informing any other node.
+
+- there is a danger that P will become a popular node, which could easily bring it into an imbalanced position regarding workload. Systematically discarding old entries turns out to promote nodes to ones having a high indegree.
+
+
+Topology Management of Overlay Networks
+
+Two layer:
+- the lowest layer constitutes an unstructured peer-to-peer system in which nodes periodically exchange entries of their partial views with the aim to maintain an accurate random graph.
+- the lowest system nodes periodically exchange entries of their partial views with the aim to maintain an accurate random graph.
+- can use ranking function order nodes according to some criterion relative to a given node.
+
+
+Superpeers
+- Notably in unstructured peer-to-peer systems, locating relevant data items can become problematic as the network grows.
+- Nodes such as maintaining an index or acting as a borker are generally referred to as superpeers.
+- the client-siperpeer relation is mostly fixed, needs backup to compensate for potential unstable behavior of a superpeer.
+- client-supperpeer relation chan change as clients discover better superpeers to associate with.
+
+
+Hybrid Architectures
+
+Edge-Server Systems
+- These systems are deployed on the Internet where servers are placed "at the edge" of the network. This edge is formed by the boundary between enterprise networks and the actual Internet as provided by an Internet Service Provider(ISP).
+
+- main pirpose is to serve content, possibly after applying filtering and transcoding functions.
+
+
+Collaborative Distributed Systems
+- a file can be downloaded only when the downloading client is providing content to someone else.
+- .torrent file contains the information that is needed to download a specific file, it refers to what is known as a tracker, which is a server that is keeping an accurate account of active nodes that have chunks of the requested file.
+
+Globule collaborative content distribution network
+- A component that can redirect client requests to other servers.
+- A component for analyzing access patterns.
+- A component for managing the replication of web pages.
+
+
+2.3 ARCHITECTURES VERSUS MIDDLEWARE
+- Middleware forms a layer between applications and distributed platforms. An important purpose is to provide a degree of distribution transparency, to a certain extent hiding the distribtion of data, processing, and control from applications.
+
+- Many middleware solutions have adopted an object-based architectural style.
+
+
+2.3.1 Interceptors
+- a software construct that will break the usual flow of control and allow other code to be executed.
+
+2.3.2 General Approaches to Adaptive Software
+- Separation of concerns.
+- Computational reflection.
+- Component-based design.
+
+2.4 SELF-MANAGEMENT IN DISTRIBUTED SYSTEMS
+
+2.4.1 The Feedback Control Model
+- most have in common is the assumption that adaptations take place by means of one or more feedback control loops.
+
+
+3. PROCESS
+
+3.1 THREADS
+
+A process is often defined as a program in execution.
+- the operatiing system takes great care to ensure that independent processes cannot maliciously or inadvertently affect the correctness of each other's behavior.
+- The fact that multiple processes may be concurrently sharing the same CPU and other hardware resources in made transparent.
+
+A thread executes its own piece of code, independently from other threads.
+- no attempt is made to achieve a high degree of concurrency transparency if this would result in performace degradation.
+
+
+Interprocess communication (IPC)
+- pipes, message queues, shared memory segments.
+- drawback: communication often requires extensive context switching.
+  - IPC requires kernel intervention, swtich from user mode to kernel mode, which needs change memory map in the memoery management unit(MMU), flushing the translation lookaside buffer(TLB). Then switch back again.
+
+Approaches to implement a thread package:
+- construct a thread library that is executed entirely in user mode.
+  * cheap create and destroy threads;
+  * switching thread context can often be done in just a few instructions;
+  * drawback: invocation of a blocking system call will immediately block the entire process to which the thread belongs, and thus also all the other threads in that process.
+
+- the kernel be aware of threads and schedule them.
+  * expensive thread operation (create, delete, synchronization...)
+  * expensive switching thread contexts.
+
+HYBRID
+Lightweight Processes(LWP)
+- several LWP run in a single process
+- also have user-level thread package offer thread operations
+- the context switch in implemented completely in use space
+- a blocking system call will not suspend the entire process
+- drawback: need create, destroy LWPs.
+
+Scheduler activations
+- when a thread blocks on a system call, the kernel does an upcall to the thread package, effectively calling the scheduler routine to select the next runnable thread.
+- saves management of LWPs by the kernel
+- drawback: upcall is not elegant, violates the structure of layered systems.
+
+

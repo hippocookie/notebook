@@ -1,0 +1,23 @@
+* Programming with RDD
+** Creating RDDs
+- val lines = scparallelize(List("pandas", "i like pandas"))
+- val lines = sc.textFile("/path/to/README.md")
+
+** RDD Operations
+*** Transformation
+- Operations on RDDs taht return a new RDD, such as map(), filter()
+
+scala:
+val inputRDD = sc.textFile("log.txt")
+val errorsRDD = inputRDD.filter(line => line.contains("error"))
+
+java:
+JavaRDD<String> inputRDD = sc.textFile("log.text");
+JavaRDD<String> errorsRDD = inputRDD.filter(
+    new Function<String, Boolean>() {
+        public Boolean call(String x) { return x.contains("error") }
+    }
+)
+
+*** Action
+- Operations that return a result to the driver program or while it to storage, and kick off a cpmputation, such as count() and first()

@@ -1,0 +1,158 @@
+* Streaming 101
+** Background
+- Unbounded data: A type of ever-growing, essentially infinite data set;
+- Unbounded data processing: An ongoing meode of data processing applied to unbounded data;
+- Lo-latency, approximate, and/or speculative results: types of results often associated with streaming engines.
+
+** Data processing patterns
+*** Bounded data (MapReduce)
+- Run entropy data through a streaming engine to get structured dataset.
+
+*** Unbounded data -batch
+**** Fixed windows
+- Repeat runs of a batch engine by windowing the input data into fixed-sized windows, the process as separate, bouned data source.
+**** Sessions
+- Defined as periods of avtivity terminated by a gap of inactivity.
+- Calculate using batch engine end up with sessions that are split across batches.
+- reduce splits by increasing batch size, but increasing latency.
+
+*** Unbounded data -streaming
+**** Time-agnositc
+- used where ime is irrelevant.
+e.g.
+**** Filtering.
+**** Inner-joins (or hash join):
+  Simply cache one part and waiting another to come, but not sure whether the second will be presented or not. Need time-based garbage collection.
+
+**** Approximation algorithms
+e.g. approximate Top-N, streaming K-means
+
+- low overhead and designed for unbounded data.
+- complicated, approximate nature limits utility.
+- susally processing-time based.
+
+**** Windowing
+- Taking a data source (either unbounded or bounded), and chopping it up along temporal boundaries into finite chunks for processing.
+
+- Fixed windows: slice up time into segments with a fixed-size temporal length.
+
+- Sliding windows: defined by a fixed length and a fixed period. If the period is less than the length, then the windows overlap. 
+If the period equals the length, you have fixed windows.
+
+- Sessions: dynamic windows, sequences of events terminated by a gap of inactivity greater than some timeout. Commonly used for analyzing user behavior over time.
+
+**** Windowing by processing time
+- system buffers up incoming data into windows until some amount of processing time has passed.
+- simple, straightforward, infer information about the source as it is observed.
+- data muse arrive in event time order if the processing time windows are to reflect the reality of when those events actually happened.
+
+**** Windowing by event time
+- need to observe a data source in finite chunks that reflect the times at which those events actually happened.
+- can create dynamically sized windows, such as sessions, without the arbitrary splits.
+
+- Buffering: Due to extended window lifetimes, more buffering of data is required.
+- Completeness: no good way of knowing when we've seen all the data for a given window, how do we know when the results for the window are ready to materialize?. (MillWheel's watermarks)
+
+* Streaming 102
+*** Concepts
+**** Watermarks
+- a notion of input completeness with respect to event times.
+- A watermark with a value of time X makes the statement: "all input data with event timesless than X have been observed."
+
+**** Triggers
+- a mechanism for declaring when the output for a window should be materialized relatve to some external signal.
+- Triggers provide flexibility in choosing when outputs should be emitted.
+- Also make it possible to observe the output for a window multiple times as it evolves.
+
+**** Accumulation
+- Specifies the relationship between multiple results that are observed for the same window.
+
+
+*** Questions for unbounded data processing
+- What results are calculated?
+  Answered by the types of transformations within the pipeline.
+
+- Where in event time are results calculated?
+  Answered by the use of event-time windowing within the pipeline.
+
+- When in processing time are results materialized?
+  Answered by the use of watermarks and triggers.
+
+- How do refinements of results relate?
+  Answered by the type of accumulation used.
+
+**** When Watermarks
+- a mapping from processing time to event time.
+
+***** Perfect watermarks
+- we have perfect knowledge of all of the input data, all data are early or on time.
+
+***** Heuristic watermarks
+- Use whatever information is available about the inputs to provide an estimate of progress that is as accurate as possible.
+
+- shortcomings:
+1. Too slow. 
+   When a watermark of any type is correctly delayed due to known unprocessed data, that translates directly into delays in output if advancement of the watermark is the only thing you depend on for stimulating results.
+
+2. Too fast.
+   It;s possible for data with event times before the watermark to arrive some time later, creating late data.
+
+**** When: Triggers
+- Declare when output for a window should happen in processing time.
+
+Simple triggers:
+- Watermark progress
+  Outputs materialized when the watermark passed the end of the window.
+
+- Processing time progress
+  Periodic updates since processing time always progresses more or less uniformly and without delay.
+
+- Element counts
+  Triggering after some finite number of elements have been observed in a window.
+
+- Punctuations
+  Somre record or feature of a record indicates that output should be generated.
+
+
+Composite triggers:
+- Repetitions
+  Conjunction with processing time triggers for providing regular, periodic updates.
+
+- Conjunctions
+  Fire only once all child triggers have fired.
+
+- Disjunctions
+  Fire after any child triggers fire.
+
+- Sequences
+  Fire a progression of child triggers in a predefined order.
+
+**** When: Allowed lateness (ie., garbage collection)
+- Place a bound, any data arrive after this are dropped.
+- if perfect watermarks are available, then no need to deal with late data.
+- No need to limit the lifetime of window if the number of keys remains manageably low.
+
+**** How: Accumulation
+***** Discarding
+- Every time a pane is materialized, any stored state is discarded. 
+- Successive pane is independent from any that came before.
+- Useful when the downstream consumer is performing some sort of accumulation itself.
+
+***** Accumulating
+- Every time a pane is materialized, any stored state is retained, and future inputs are accumulated into the existing state.
+- Successive pane builds upon the previous panes.
+- Useful when later results can simply overwrite previous results.
+
+***** Accumulating & retracting:
+- When producing a new pane, also produces independent retractions for the previous panes.
+
+
+*** When/Where: Processing-time windows
+Methods to achieve processing-time windowing
+- Triggers: ignore event time and use triggers to provide snapshots of that window int the processing-time axis.
+
+- Ingress time: Assign ingress time as the event times for data as they arrive, and use normal event time windowing from there on. (Spark Streaming)
+
+Downside:
+- The contents of the windows change when the observation order of the inputs changes.
+
