@@ -685,3 +685,57 @@ spec:
       - name: nginx
         image: nginx:1.7.9
 ```
+
+一个 ReplicaSet 对象，其实就是由副本数目的定义和一个 Pod 模板组成的。不难发现，它的定义其实是 Deployment 的一个子集。
+
+更重要的是，Deployment 控制器实际操纵的，正是这样的 ReplicaSet 对象，而不是 Pod 对象。
+
+![Replica Set](./images/replica_set.png)
+
+ReplicaSet 负责通过“控制器模式”，保证系统中 Pod 的个数永远等于指定的个数（比如，3 个）。这也正是 Deployment 只允许容器的 restartPolicy=Always 的主要原因：只有在容器能保证自己始终是 Running 状态的前提下，ReplicaSet 调整 Pod 的个数才有意义。
+
+“水平扩展 / 收缩”非常容易实现，Deployment Controller 只需要修改它所控制的 ReplicaSet 的 Pod 副本个数就可以了。
+
+```bash
+$ kubectl scale deployment nginx-deployment --replicas=4
+deployment.apps/nginx-deployment scaled
+```
+
+### 滚动更新
+
+将一个集群中正在运行的多个 Pod 版本，交替地逐一升级的过程，就是“滚动更新”。
+
+创建一个deployment
+
+```bash
+$ kubectl create -f nginx-deployment.yaml --record
+
+
+$ kubectl get deployments
+NAME               DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
+nginx-deployment   3         0         0            0           1s
+```
+
+- DESIRED：用户期望的 Pod 副本个数（spec.replicas 的值）；
+- CURRENT：当前处于 Running 状态的 Pod 的个数；
+- UP-TO-DATE：当前处于最新版本的 Pod 的个数，所谓最新版本指的是 Pod 的 Spec 部分与 Deployment 里 Pod 模板里定义的完全一致；
+- AVAILABLE：当前已经可用的 Pod 的个数，即：既是 Running 状态，又是最新版本，并且已经处于 Ready（健康检查正确）状态的 Pod 的个数。
+
+实时查看deployment对象状态变化:
+
+```bash
+$ kubectl rollout status deployment/nginx-deployment
+Waiting for rollout to finish: 2 out of 3 new replicas have been updated...
+deployment.apps/nginx-deployment successfully rolled out
+```
+
+查看Replica Set
+
+```bash
+$ kubectl get rs
+NAME                          DESIRED   CURRENT   READY   AGE
+nginx-deployment-3167673210   3         3         3       20s
+```
+
+## StatefulSet - 拓扑状态
+
