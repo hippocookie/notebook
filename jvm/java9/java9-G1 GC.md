@@ -1,4 +1,4 @@
-# Java 9 G1 GC
+# Java 9 - G1 GC
 
 ## G1 GC
 
