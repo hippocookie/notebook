@@ -40,6 +40,15 @@ Delta List: 存储当前数字和前一个数字的差值
 >
 > (0, 1000), (0, 62101), (2, 313), (2, 980) -- 熵(二进制前16位)和余数(二进制后16位)
 
+|short key|Container|
+|---|---|
+|0|1000, 62101|
+|2|313, 980|
+
+- Array Container
+- BitMap Container
+- Range Container
+
 ## 词项字典 - Term Dictionary
 
 - tip: 词典索引，存放前缀后缀指针，需要内存加载
