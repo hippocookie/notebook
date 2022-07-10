@@ -85,10 +85,33 @@ Delta List: 存储当前数字和前一个数字的差值
 
 实现Key到Value的映射，相当于HashMap<Key, Value>，查询速度慢于HashMap，但极大节省空间。
 
-FST在Lucene中大量使用，如倒排碎银存储，同义词词典存储，搜索关键词建议等。
+FST在Lucene中大量使用，如倒排索引存储，同义词词典存储，搜索关键词建议等。
+
+![fst](./images/fst.png)
 
 FST相比于FSA，在终止节点带有一个value。
 
 ## 词项索引 - Term Index
 
 极大的节省内存，FST压缩倍率最高可以达到20倍，性能不如HashMap
+
+## FST In Lucene
+
+### Node
+
+描述节点状态
+
+- UnCompiledNode: 节点可能存在变化，尚未处理的节点
+  - frontier[]: 存储UnCompiledNode，待处理的节点Arc
+
+![uncompilednode](./images/uncompilednode.png)
+
+- CompiledNode: 节点d已经不需再改变了，将d进行处理
+  - current[]: 存储CompiledNode的二进制数组
+  - ByteStore(封装了current[]): Term Dictionary构建出来的二进制数组超过1GB时候，将使用此数据结构存储
+
+![compilednode](./images/compilednode.png)
+
+### Arc - 出度
+
+![arc](./images/arc.png)
