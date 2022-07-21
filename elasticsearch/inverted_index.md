@@ -115,3 +115,11 @@ FST相比于FSA，在终止节点带有一个value。
 ### Arc - 出度
 
 ![arc](./images/arc.png)
+
+### Pending Entry
+
+![pending_entry](./images/pending_entry.png)
+
+#### Pending Term
+
+#### Pending Block
