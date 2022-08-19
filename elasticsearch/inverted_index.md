@@ -133,3 +133,17 @@ current数组的封装，当FST大小超过1G时候，使用ByteStore。
 #### Pending Block
 
 多个pending term聚集在一起
+
+- hasTerms: 是否包含至少一个Pending term
+- isFloor: 是否
+
+- DEFAULT_MIN_BLOCK_SIZE: 小于该值为pending term，大于为pending block
+- DEFAULT_MAX_BLOCK_SIZE: 大于该值拆分为floor block
+
+![pending_entry2](./images/pending_entry2.png)
+
+## Term Index & Term Dictionary
+
+![term_index](./images/term_index.png)
+
+## FST Index
