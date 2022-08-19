@@ -112,9 +112,15 @@ FST相比于FSA，在终止节点带有一个value。
 
 ![compilednode](./images/compilednode.png)
 
+当输入abe时，以abd开头前缀的已经结束了，d节点由UncompiledNode转换(通过FreezeTail)为CompiledNode
+
 ### Arc - 出度
 
 ![arc](./images/arc.png)
+
+### ByteStore
+
+current数组的封装，当FST大小超过1G时候，使用ByteStore。
 
 ### Pending Entry
 
@@ -122,4 +128,8 @@ FST相比于FSA，在终止节点带有一个value。
 
 #### Pending Term
 
+单独的一个node就是pending term
+
 #### Pending Block
+
+多个pending term聚集在一起
