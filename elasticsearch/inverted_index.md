@@ -144,6 +144,19 @@ current数组的封装，当FST大小超过1G时候，使用ByteStore。
 
 ## Term Index & Term Dictionary
 
+- tip文件: 存放词项索引(Term Index)
+
 ![term_index](./images/term_index.png)
 
-## FST Index
+- header
+  - EntryCount: 当前Node中entry的数量
+  - BlockTreeTremsWriter.PendingEntry
+
+- Suffix(前缀)
+  - SuffixLength: 后缀个数
+  - SuffixValue: 后缀值
+
+- Stats
+  - StatsLength
+  - DocFreq: 包含当前Term的doc数量
+  - TotalTermFreq: 当前Term在所有文档中出现的总次数
