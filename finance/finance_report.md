@@ -142,3 +142,73 @@
 ### 为分配利润(Retained earnings)
 
 股东决定不分配的利润
+
+## 利润表(Income statement)
+
+到底有没有赚到钱
+
+![income statement](./images/income_statement.png)
+
+- 净利润 = 利润总额 - 所得税
+- 毛利 = 收入 - 成本
+- 税前利润 = 毛利 - 费用
+
+### 营业收入(Operating income)
+
+卖掉东西的收入
+
+### 营业成本(Operating cost)
+
+卖掉东西的成本
+
+### 营业税金及附加(Business tax and surcharges)
+
+通常只包含营业税、增值税附加税费
+
+### 流转税(Turnover taxes)
+
+只要有业务，不管赚没赚到钱都得交
+
+#### 营业税
+
+价内税，经营者承担
+
+#### 增值税
+
+价外税，消费者承担，应该体现在经营者应交税金中
+
+### 期间费用
+
+#### 营业费用(Operating expense)
+
+广告费、运费、仓储费
+
+#### 管理费用(Administration expense)
+
+管理人员工资，办公楼折旧
+
+#### 财务费用(Financial exprenses)
+
+存款利息
+
+### 投资收益(Investment income)
+
+### 资产减值损失(Imairment loss of asset)
+
+### 公允价值变动的收益(Gains on the changes in the fair value)
+
+### 营业外收入
+
+跟经营活动无关，不可持续
+
+### 营业外支出
+
+跟经营活动无关，不可持续，额外损失
+
+### 补贴收入
+
+政府补贴
+
+### 汇兑损益(Exchange gain and loss)
+
+## 现金流量表
