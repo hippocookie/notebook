@@ -216,3 +216,13 @@
 收到和付出钱的情况
 
 ![cash_flow_statement](./images/cash_flow_statement.png)
+
+体现流入和流出在经营过程中的分布情况，描述现金的来龙去脉。
+
+现金关系到企业的生死存亡，描述了这个企业的风险状况。
+
+![cash_flow_statement2](./images/cash_flow_statement2.png)
+
+按融资、投资、经营归类后，得出各部分现金流
+
+![cash_flow_statement3](./images/cash_flow_statement3.png)
