@@ -212,3 +212,7 @@
 ### 汇兑损益(Exchange gain and loss)
 
 ## 现金流量表
+
+收到和付出钱的情况
+
+![cash_flow_statement](./images/cash_flow_statement.png)
