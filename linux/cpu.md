@@ -156,3 +156,55 @@ RES:    2450431    5279697   Rescheduling interrupts
 这个数值其实取决于系统本身的 CPU 性能。如果系统的上下文切换次数比较稳定，那么从数百到一万以内，都应该算是正常的。但当上下文切换次数超过一万次，或者切换次数出现数量级的增长时，就很可能已经出现了性能问题。
 
 ## CPU使用率
+
+CPU 使用率是单位时间内 CPU 使用情况的统计，以百分比的方式展示。
+
+为了维护 CPU 时间，Linux 通过事先定义的节拍率（内核中表示为 HZ），触发时间中断，并使用全局变量 Jiffies 记录了开机以来的节拍数。每发生一次时间中断，Jiffies 的值就加 1。节拍率 HZ 是内核的可配选项，可以设置为 100、250、1000 等。不同的系统可能设置不同数值，你可以通过查询 /boot/config 内核选项来查看它的配置值。
+
+```bash
+$ grep 'CONFIG_HZ=' /boot/config-$(uname -r)
+CONFIG_HZ=250
+```
+
+正因为节拍率 HZ 是内核选项，所以用户空间程序并不能直接访问。为了方便用户空间程序，内核还提供了一个用户空间节拍率 USER_HZ，它总是固定为 100，也就是 1/100 秒。
+
+- user（通常缩写为 us），代表用户态 CPU 时间。注意，它不包括下面的 nice 时间，但包括了 guest 时间。
+- nice（通常缩写为 ni），代表低优先级用户态 CPU 时间，也就是进程的 nice 值被调整为 1-19 之间时的 CPU 时间。这里注意，nice 可取值范围是 -20 到 19，数值越大，优先级反而越低。
+- system（通常缩写为 sys），代表内核态 CPU 时间。idle（通常缩写为 id），代表空闲时间。注意，它不包括等待 I/O 的时间（iowait）。
+- iowait（通常缩写为 wa），代表等待 I/O 的 CPU 时间。irq（通常缩写为 hi），代表处理硬中断的 CPU 时间。
+- softirq（通常缩写为 si），代表处理软中断的 CPU 时间。
+- steal（通常缩写为 st），代表当系统运行在虚拟机中的时候，被其他虚拟机占用的 CPU 时间。
+- guest（通常缩写为 guest），代表通过虚拟化运行其他操作系统的时间，也就是运行虚拟机的 CPU 时间。
+- guest_nice（通常缩写为 gnice），代表以低优先级运行虚拟机的时间。
+
+```bash
+# 默认每3秒刷新一次
+$ top
+top - 11:58:59 up 9 days, 22:47,  1 user,  load average: 0.03, 0.02, 0.00
+Tasks: 123 total,   1 running,  72 sleeping,   0 stopped,   0 zombie
+%Cpu(s):  0.3 us,  0.3 sy,  0.0 ni, 99.3 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
+KiB Mem :  8169348 total,  5606884 free,   334640 used,  2227824 buff/cache
+KiB Swap:        0 total,        0 free,        0 used.  7497908 avail Mem
+
+  PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND
+    1 root      20   0   78088   9288   6696 S   0.0  0.1   0:16.83 systemd
+    2 root      20   0       0      0      0 S   0.0  0.0   0:00.05 kthreadd
+    4 root       0 -20       0      0      0 I   0.0  0.0   0:00.00 kworker/0:0H
+```
+
+ top 并没有细分进程的用户态 CPU 和内核态 CPU。
+
+ pidstat 命令查看每个进程的详情，就间隔 1 秒展示了进程的 5 组 CPU 使用率，包括：用户态 CPU 使用率 （%usr）；内核态 CPU 使用率（%system）；运行虚拟机 CPU 使用率（%guest）；等待 CPU 使用率（%wait）；以及总的 CPU 使用率（%CPU）。最后的 Average 部分，还计算了 5 组数据的平均值。
+
+```bash
+# 每隔1秒输出一组数据，共输出5组
+$ pidstat 1 5
+15:56:02      UID       PID    %usr %system  %guest   %wait    %CPU   CPU  Command
+15:56:03        0     15006    0.00    0.99    0.00    0.00    0.99     1  dockerd
+
+...
+
+Average:      UID       PID    %usr %system  %guest   %wait    %CPU   CPU  Command
+Average:        0     15006    0.00    0.99    0.00    0.00    0.99     -  dockerd
+```
+
