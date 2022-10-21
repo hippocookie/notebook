@@ -97,7 +97,7 @@ GET / _mget
 
 - 每行数据已换行符(\n)作为结尾，包括最后一行也许已换行符结尾
 - 每行数据中不能包含未转义的换行符，即pretty-printed的json格式
-```json
+```ndjson
 { action: { metadata }}\n
 { request body }\n
 { action: { metadata }}\n
