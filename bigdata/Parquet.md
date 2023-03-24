@@ -55,3 +55,97 @@ TiDB 是一种分布式 SQL 数据库，支持水平扩展和自动容错。它�
 ## 结论
 
 Parquet 是一种非常流行的文件格式，它被广泛用于存储和分析大型数据集。Parquet 最大的优势是它可以存储高度压缩的数据，从而能够节省大量存储空间。此外，Parquet 的列式存储格式可以显著提高读取性能，特别是当需要读取数据集中的部分列时。另一个重要的功能是 Parquet 支持模式演化，这意味着您可以在数据集中添加或删除列，而不会影响数据的存储或读取。总的来说，Parquet 是一个非常强大的工具，可以用于各种大数据处理和分析任务，特别是在需要高效存储和读取大型数据集时。
+
+pache Parquet 提供了不依赖于 Hadoop 的 API 用于读写 Parquet 文件，这个 API 通常称为“本地 API”（Local API）。
+
+以下是使用本地 API 写入 Parquet 文件的示例代码：
+
+```java
+import java.io.File;
+import java.io.IOException;
+
+import org.apache.parquet.column.ColumnDescriptor;
+import org.apache.parquet.column.ParquetProperties.WriterVersion;
+import org.apache.parquet.example.data.Group;
+import org.apache.parquet.example.data.simple.SimpleGroupFactory;
+import org.apache.parquet.hadoop.ParquetFileWriter;
+import org.apache.parquet.hadoop.metadata.CompressionCodecName;
+import org.apache.parquet.hadoop.metadata.ParquetMetadata;
+import org.apache.parquet.schema.MessageType;
+import org.apache.parquet.schema.MessageTypeParser;
+
+public class ParquetWriterExample {
+
+    public static void main(String[] args) throws IOException {
+        // 定义 Parquet 文件的架构
+        MessageType schema = MessageTypeParser.parseMessageType(
+                "message Pair {\n" +
+                "  required binary key (UTF8);\n" +
+                "  optional int32 value;\n" +
+                "}"
+        );
+
+        // 创建 Parquet 文件的输出流
+        File outputFile = new File("path/to/parquet/file.parquet");
+        ParquetMetadata parquetMetadata = new ParquetMetadata(schema, new CompressionCodecName[] { CompressionCodecName.SNAPPY });
+        ParquetFileWriter fileWriter = new ParquetFileWriter(
+                new org.apache.hadoop.fs.Path(outputFile.getAbsolutePath()),
+                parquetMetadata.getCreatedBy(),
+                schema,
+                WriterVersion.PARQUET_1_0,
+                new org.apache.hadoop.fs.Path(outputFile.getAbsolutePath()).getFileSystem(new org.apache.hadoop.conf.Configuration())
+        );
+        fileWriter.start();
+
+        // 定义 Pair 类，用于表示 Parquet 文件中的记录
+        SimpleGroupFactory groupFactory = new SimpleGroupFactory(schema);
+        Group pair1 = groupFactory.newGroup()
+                .append("key", "key1")
+                .append("value", 1);
+        Group pair2 = groupFactory.newGroup()
+                .append("key", "key2")
+                .append("value", 2);
+
+        // 写入 Parquet 文件
+        fileWriter.write(pair1);
+        fileWriter.write(pair2);
+
+        // 关闭 Parquet 文件的输出流
+        fileWriter.end();
+    }
+
+}
+
+```
+
+需要注意的是，使用本地 API 时需要手动管理 Parquet 文件的输出流，而不是像在 Hadoop 中一样使用 HadoopOutputFile 类。此外，需要导入以下 Maven 依赖项：
+
+```xml
+<dependency>
+    <groupId>org.apache.parquet</groupId>
+    <artifactId>parquet-column</artifactId>
+    <version>${parquet.version}</version>
+</dependency>
+<dependency>
+    <groupId>org.apache.parquet</groupId>
+    <artifactId>parquet-encoding</artifactId>
+    <version>${parquet.version}</version>
+</dependency>
+<dependency>
+    <groupId>org.apache.parquet</groupId>
+    <artifactId>parquet-format</artifactId>
+    <version>${parquet.version}</version>
+</dependency>
+<dependency>
+    <groupId>org.apache.parquet</groupId>
+    <artifactId>parquet-hadoop</artifactId>
+    <version>${parquet.version}</version>
+    <exclusions>
+        <exclusion>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-core</artifactId>
+        </exclusion>
+        <exclusion>
+           
+
+```
