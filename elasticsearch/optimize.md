@@ -39,3 +39,70 @@ Elasticsearch 6.x之后，你可以使用异步刷新来提高性能。这将允
 数据预处理：
 
 在写入数据到Elasticsearch之前，进行数据清洗和预处理，以减少不必要的写入操作和数据冗余。
+
+"Elasticsearch: The Definitive Guide"（Elasticsearch权威指南） by Clinton Gormley and Zachary Tong:
+
+该书是Elasticsearch领域的经典之作，详细介绍了Elasticsearch的各个方面，包括性能调优和最佳实践。
+"Elasticsearch in Action" by Radu Gheorghe, Matthew Lee Hinman, and Roy Russo:
+
+这本书提供了关于Elasticsearch的实际应用和性能调优方面的示例和指南。
+"Mastering Elasticsearch 7.0" by A. Rafalovych and O. Patrasnyi:
+
+这本书专注于Elasticsearch 7.0版本，提供了深入的性能调优技巧和示例。
+"Elasticsearch 7 and Elastic Stack" by Pranav Shukla:
+
+这本书涵盖了Elasticsearch 7及其与Elastic Stack的集成，包括性能优化方面的内容。
+
+```xml
+<dependency>
+    <groupId>org.jgrapht</groupId>
+    <artifactId>jgrapht-core</artifactId>
+    <version>1.5.0</version> <!-- 根据最新版本选择 -->
+</dependency>
+```
+
+```java
+import org.jgrapht.Graph;
+import org.jgrapht.alg.shortestpath.FloydWarshallShortestPaths;
+import org.jgrapht.graph.DefaultDirectedWeightedGraph;
+import org.jgrapht.graph.DefaultEdge;
+
+public class MultiSourceShortestPathExample {
+    public static void main(String[] args) {
+        // 创建一个有向加权图
+        Graph<String, DefaultEdge> graph = new DefaultDirectedWeightedGraph<>(DefaultEdge.class);
+
+        // 添加顶点
+        String vertexA = "A";
+        String vertexB = "B";
+        String vertexC = "C";
+        String vertexD = "D";
+        String vertexE = "E";
+        graph.addVertex(vertexA);
+        graph.addVertex(vertexB);
+        graph.addVertex(vertexC);
+        graph.addVertex(vertexD);
+        graph.addVertex(vertexE);
+
+        // 添加边和权重
+        graph.setEdgeWeight(graph.addEdge(vertexA, vertexB), 1);
+        graph.setEdgeWeight(graph.addEdge(vertexB, vertexC), 2);
+        graph.setEdgeWeight(graph.addEdge(vertexC, vertexA), 3);
+        graph.setEdgeWeight(graph.addEdge(vertexC, vertexD), 1);
+        graph.setEdgeWeight(graph.addEdge(vertexD, vertexE), 4);
+
+        // 使用Floyd-Warshall算法计算多源最短路径
+        FloydWarshallShortestPaths<String, DefaultEdge> shortestPaths = new FloydWarshallShortestPaths<>(graph);
+
+        // 输出从顶点A到其他所有顶点的最短路径
+        for (String targetVertex : graph.vertexSet()) {
+            if (!targetVertex.equals(vertexA)) {
+                double shortestDistance = shortestPaths.getPathWeight(vertexA, targetVertex);
+                System.out.println("Shortest path from " + vertexA + " to " + targetVertex + ": " + shortestDistance);
+            }
+        }
+    }
+}
+```
+
+<https://zhuanlan.zhihu.com/p/366785695>
