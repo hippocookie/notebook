@@ -27,7 +27,7 @@ G1开创的基于Region的堆内存布局是它能够实现这个目标的关键
 
 虽然G1仍然保留新生代和老年代的概念，但新生代和老年代不再是固定的了，它们都是一系列区域（不需要连续）的动态集合。在进行垃圾收集时，无需处理整个新生代或老年代，而是将Region作为单次回收的最小单元，即每次收集到的内存空间都是Region大小的整数倍，这样可以有计划地避免在整个Java堆中进行全区域的垃圾收集。
 
-### Humongous 
+### Humongous
 
 Region中还有一类特殊的Humongous区域，专门用来存储大对象。G1认为只要大小超过了一个Region容量一半的对象即可判定为大对象。每个Region的大小可以通过参数-XX：G1HeapRegionSize设定，取值范围为1MB～32MB，且应为2的N次幂。而对于那些超过了整个Region容量的超级大对象，将会被存放在N个连续的Humongous Region之中，G1的大多数行为都把Humongous Region作为老年代的一部分来进行看待。
 
@@ -89,9 +89,9 @@ Full GC耗时很高，一般由于堆的老年代空间使用率较高导致，�
 - 增加并发标记线程数 *-XX:ConcGCThreads*
 - 强制G1提前触发标记。G1通过观测应用之前的行为，来决定堆占用百分比域值(IHOP)，如果应用行为发生变化，预测结果可能是错误的，有以下两种解决方式：
 
-    - 通过 *-XX:G1ReservePercent*参数预留空间来提前触发回收操作
+  - 通过 *-XX:G1ReservePercent*参数预留空间来提前触发回收操作
 
-    - 通过 *XX:-G1UseAdaptiveIHOP*和 *-XX:InitiatingHeapOccupancyPercent*参数来禁用IHOP，并手动设置域值
+  - 通过 *XX:-G1UseAdaptiveIHOP*和 *-XX:InitiatingHeapOccupancyPercent*参数来禁用IHOP，并手动设置域值
 
 除此之外，外部工具也可通过 *System.gc()* 调用来触发Full GC，可通过 *-XX:+ExplicitGCInvokesConcurrent* 降低影响或 *-XX:+DisableExplicitGC* 来忽略。
 
@@ -136,4 +136,3 @@ Full GC耗时很高，一般由于堆的老年代空间使用率较高导致，�
 注意后两个方法是通过减少回收Region数量来达成减少耗时的，在持续内存分配过程中可能导致回收不及时，放在后续的GC中进行回收。
 
 **更新/扫描RS耗时高**
-
